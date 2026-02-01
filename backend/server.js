@@ -19,7 +19,12 @@ app.use(cors({
 app.use(express.json());
 
 // Temporary directory for code files
-const TEMP_DIR = path.join(__dirname, 'temp');
+// Use /tmp on Linux (Render) which always exists, fall back to ./temp on Windows (local)
+const TEMP_DIR = process.platform === 'win32'
+    ? path.join(__dirname, 'temp')
+    : '/tmp/code-editor';
+
+// Create the temp directory at startup
 if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
 }
@@ -82,6 +87,11 @@ app.post('/api/execute', async (req, res) => {
     const filePath = path.join(TEMP_DIR, fileName);
 
     try {
+        // Re-create temp dir if it somehow disappeared
+        if (!fs.existsSync(TEMP_DIR)) {
+            fs.mkdirSync(TEMP_DIR, { recursive: true });
+        }
+
         // Write code to file
         fs.writeFileSync(filePath, code);
 

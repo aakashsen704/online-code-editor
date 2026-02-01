@@ -1,0 +1,361 @@
+/* ─── App shell ──────────────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ─── Hidden file input (upload) ────────────────────────────────── */
+.hidden-file-input {
+  display: none;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────── */
+.header {
+  background-color: #252526;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #3e3e42;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.header-left h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.header-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ─── Selects (language / theme) ────────────────────────────────── */
+.language-select,
+.theme-select {
+  padding: 7px 10px;
+  background-color: #3c3c3c;
+  color: #cccccc;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.language-select:hover,
+.theme-select:hover {
+  background-color: #464646;
+  border-color: #666666;
+}
+
+.language-select:focus,
+.theme-select:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+/* ─── Upload / Download (icon) buttons ──────────────────────────── */
+.icon-button {
+  padding: 7px 12px;
+  background-color: #3c3c3c;
+  color: #cccccc;
+  border: 1px solid #555555;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.icon-button:hover {
+  background-color: #464646;
+  border-color: #007acc;
+  color: #ffffff;
+}
+
+/* ─── Run button ─────────────────────────────────────────────────── */
+.run-button {
+  padding: 7px 18px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.run-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.run-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.run-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─── Tab Bar ────────────────────────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  align-items: stretch;
+  background-color: #1e1e1e;
+  border-bottom: 1px solid #3e3e42;
+  overflow-x: auto;         /* scroll if there are many tabs */
+  overflow-y: hidden;
+  flex-shrink: 0;
+  padding: 0 4px;
+  gap: 2px;
+}
+
+/* Individual tab */
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background-color: transparent;
+  color: #888888;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s;
+  user-select: none;
+  max-width: 200px;
+}
+
+.tab:hover {
+  background-color: #2d2d30;
+  color: #cccccc;
+}
+
+/* Active tab */
+.tab--active {
+  background-color: #252526;
+  color: #ffffff;
+  border-bottom: 2px solid #007acc;
+}
+
+/* Tab name (truncate if too long) */
+.tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+/* Close button on each tab */
+.tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: none;
+  border: none;
+  color: #666666;
+  font-size: 16px;
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.tab-close:hover {
+  background-color: #3c3c3c;
+  color: #e81123;
+}
+
+/* Rename input (shown on double-click) */
+.tab-rename-input {
+  width: 120px;
+  background-color: #3c3c3c;
+  border: 1px solid #007acc;
+  border-radius: 3px;
+  color: #ffffff;
+  font-size: 12px;
+  padding: 2px 6px;
+  outline: none;
+  font-family: inherit;
+}
+
+/* "+" button at the end of the tab bar */
+.tab-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 100%;
+  background: none;
+  border: none;
+  color: #666666;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.tab-add:hover {
+  background-color: #2d2d30;
+  color: #ffffff;
+}
+
+/* ─── Main content split ─────────────────────────────────────────── */
+.content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.editor-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #3e3e42;
+  min-width: 0; /* let flexbox shrink properly */
+}
+
+.output-section {
+  width: 40%;
+  display: flex;
+  flex-direction: column;
+  background-color: #1e1e1e;
+}
+
+/* ─── Output panel header ────────────────────────────────────────── */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #2d2d30;
+  border-bottom: 1px solid #3e3e42;
+  font-size: 14px;
+  font-weight: 500;
+  color: #cccccc;
+  flex-shrink: 0;
+}
+
+.output-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.execution-time {
+  font-size: 12px;
+  color: #4ec9b0;
+  padding: 4px 8px;
+  background-color: rgba(78, 201, 176, 0.1);
+  border-radius: 3px;
+}
+
+.clear-button {
+  padding: 4px 12px;
+  background-color: #3c3c3c;
+  color: #cccccc;
+  border: 1px solid #555555;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-button:hover {
+  background-color: #464646;
+  border-color: #666666;
+}
+
+/* ─── Terminal (output area) ─────────────────────────────────────── */
+.terminal {
+  flex: 1;
+  overflow: auto;
+  padding: 15px;
+  background-color: #1e1e1e;
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  transition: background-color 0.25s;
+}
+
+.terminal pre {
+  margin: 0;
+  color: #d4d4d4;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Error state: tint the terminal red */
+.terminal--error {
+  background-color: #2a1a1a;
+}
+
+.terminal--error pre {
+  color: #f48771;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 968px) {
+  .content {
+    flex-direction: column;
+  }
+
+  .editor-section {
+    border-right: none;
+    border-bottom: 1px solid #3e3e42;
+    height: 50%;
+  }
+
+  .output-section {
+    width: 100%;
+    height: 50%;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .header-controls {
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .header-left h1 {
+    font-size: 16px;
+  }
+
+  .language-select,
+  .theme-select,
+  .run-button,
+  .icon-button {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .tab {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}

@@ -99,10 +99,44 @@ app.post('/api/execute', async (req, res) => {
         const command = config.command(filePath);
         const startTime = Date.now();
 
-        exec(command, {
-            timeout: 5000, // 5 seconds timeout
-            maxBuffer: 1024 * 1024 // 1MB buffer
-        }, (error, stdout, stderr) => {
+        // Use spawn instead of exec to support stdin
+        const { spawn } = require('child_process');
+        
+        // Parse the command (handle both simple commands and shell commands)
+        let child;
+        if (command.includes('&&') || command.includes('cd ')) {
+            // For complex commands (Java, C, C++), use shell
+            child = spawn(command, [], { 
+                shell: true,
+                timeout: 5000
+            });
+        } else {
+            // For simple commands (Python, JS), split properly
+            const parts = command.match(/(?:[^\s"]+|"[^"]*")+/g).map(p => p.replace(/"/g, ''));
+            child = spawn(parts[0], parts.slice(1), {
+                timeout: 5000
+            });
+        }
+
+        let stdout = '';
+        let stderr = '';
+
+        // Write input to stdin if provided
+        if (input) {
+            child.stdin.write(input);
+            child.stdin.end();
+        }
+
+        // Collect output
+        child.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+
+        child.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        child.on('close', (code) => {
             const executionTime = Date.now() - startTime;
 
             // Cleanup
@@ -120,11 +154,11 @@ app.post('/api/execute', async (req, res) => {
                 console.error('Cleanup error:', cleanupError);
             }
 
-            if (error) {
+            if (code !== 0 || stderr) {
                 return res.json({
                     success: false,
-                    output: '',
-                    error: stderr || error.message,
+                    output: stdout,
+                    error: stderr || 'Program exited with error',
                     executionTime
                 });
             }
@@ -133,6 +167,24 @@ app.post('/api/execute', async (req, res) => {
                 success: true,
                 output: stdout,
                 error: stderr,
+                executionTime
+            });
+        });
+
+        child.on('error', (error) => {
+            const executionTime = Date.now() - startTime;
+            
+            // Cleanup
+            try {
+                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            } catch (cleanupError) {
+                console.error('Cleanup error:', cleanupError);
+            }
+
+            res.json({
+                success: false,
+                output: '',
+                error: error.message,
                 executionTime
             });
         });

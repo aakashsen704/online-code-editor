@@ -9,8 +9,6 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-// In production CORS only allows the deployed frontend origin.
-// Locally (no env set) it allows everything so localhost:3000 works.
 app.use(cors({
     origin: process.env.FRONTEND_URL || '*',
     methods: ['GET', 'POST'],
@@ -19,7 +17,6 @@ app.use(cors({
 app.use(express.json());
 
 // Temporary directory for code files
-// Use /tmp on Linux (Render) which always exists, fall back to ./temp on Windows (local)
 const TEMP_DIR = process.platform === 'win32'
     ? path.join(__dirname, 'temp')
     : '/tmp/code-editor';
@@ -33,31 +30,50 @@ if (!fs.existsSync(TEMP_DIR)) {
 const languageConfig = {
     javascript: {
         extension: '.js',
-        command: (filePath) => `node "${filePath}"`
+        command: (filePath, inputData) => {
+            if (inputData) {
+                return `echo "${inputData.replace(/"/g, '\\"')}" | node "${filePath}"`;
+            }
+            return `node "${filePath}"`;
+        }
     },
     python: {
         extension: '.py',
-        command: (filePath) => `python3 "${filePath}"`
+        command: (filePath, inputData) => {
+            if (inputData) {
+                return `echo "${inputData.replace(/"/g, '\\"')}" | python3 "${filePath}"`;
+            }
+            return `python3 "${filePath}"`;
+        }
     },
     java: {
         extension: '.java',
-        command: (filePath) => {
+        command: (filePath, inputData) => {
             const className = path.basename(filePath, '.java');
             const dir = path.dirname(filePath);
+            if (inputData) {
+                return `cd "${dir}" && javac "${filePath}" && echo "${inputData.replace(/"/g, '\\"')}" | java ${className}`;
+            }
             return `cd "${dir}" && javac "${filePath}" && java ${className}`;
         }
     },
     cpp: {
         extension: '.cpp',
-        command: (filePath) => {
+        command: (filePath, inputData) => {
             const outputPath = filePath.replace('.cpp', '');
+            if (inputData) {
+                return `g++ "${filePath}" -o "${outputPath}" && echo "${inputData.replace(/"/g, '\\"')}" | "${outputPath}"`;
+            }
             return `g++ "${filePath}" -o "${outputPath}" && "${outputPath}"`;
         }
     },
     c: {
         extension: '.c',
-        command: (filePath) => {
+        command: (filePath, inputData) => {
             const outputPath = filePath.replace('.c', '');
+            if (inputData) {
+                return `gcc "${filePath}" -o "${outputPath}" && echo "${inputData.replace(/"/g, '\\"')}" | "${outputPath}"`;
+            }
             return `gcc "${filePath}" -o "${outputPath}" && "${outputPath}"`;
         }
     }
@@ -95,48 +111,15 @@ app.post('/api/execute', async (req, res) => {
         // Write code to file
         fs.writeFileSync(filePath, code);
 
-        // Execute the code
-        const command = config.command(filePath);
+        // Execute the code with optional input
+        const command = config.command(filePath, input);
         const startTime = Date.now();
 
-        // Use spawn instead of exec to support stdin
-        const { spawn } = require('child_process');
-        
-        // Parse the command (handle both simple commands and shell commands)
-        let child;
-        if (command.includes('&&') || command.includes('cd ')) {
-            // For complex commands (Java, C, C++), use shell
-            child = spawn(command, [], { 
-                shell: true,
-                timeout: 5000
-            });
-        } else {
-            // For simple commands (Python, JS), split properly
-            const parts = command.match(/(?:[^\s"]+|"[^"]*")+/g).map(p => p.replace(/"/g, ''));
-            child = spawn(parts[0], parts.slice(1), {
-                timeout: 5000
-            });
-        }
-
-        let stdout = '';
-        let stderr = '';
-
-        // Write input to stdin if provided
-        if (input) {
-            child.stdin.write(input);
-            child.stdin.end();
-        }
-
-        // Collect output
-        child.stdout.on('data', (data) => {
-            stdout += data.toString();
-        });
-
-        child.stderr.on('data', (data) => {
-            stderr += data.toString();
-        });
-
-        child.on('close', (code) => {
+        exec(command, {
+            timeout: 5000,
+            maxBuffer: 1024 * 1024,
+            shell: '/bin/bash'
+        }, (error, stdout, stderr) => {
             const executionTime = Date.now() - startTime;
 
             // Cleanup
@@ -154,11 +137,11 @@ app.post('/api/execute', async (req, res) => {
                 console.error('Cleanup error:', cleanupError);
             }
 
-            if (code !== 0 || stderr) {
+            if (error) {
                 return res.json({
                     success: false,
                     output: stdout,
-                    error: stderr || 'Program exited with error',
+                    error: stderr || error.message,
                     executionTime
                 });
             }
@@ -167,24 +150,6 @@ app.post('/api/execute', async (req, res) => {
                 success: true,
                 output: stdout,
                 error: stderr,
-                executionTime
-            });
-        });
-
-        child.on('error', (error) => {
-            const executionTime = Date.now() - startTime;
-            
-            // Cleanup
-            try {
-                if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            } catch (cleanupError) {
-                console.error('Cleanup error:', cleanupError);
-            }
-
-            res.json({
-                success: false,
-                output: '',
-                error: error.message,
                 executionTime
             });
         });

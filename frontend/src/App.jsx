@@ -102,6 +102,7 @@ function createTab(language = 'javascript', name = null, code = null) {
     name: name || `Untitled${id}${extensionMap[language]}`,
     language,
     code: code !== null ? code : defaultCode[language],
+    input: '',
     output: '',
     executionTime: null,
     hasError: false
@@ -121,6 +122,7 @@ function App() {
       name: 'main.js',
       language: 'javascript',
       code: defaultCode.javascript,
+      input: '', // user input for stdin
       output: '',
       executionTime: null,
       hasError: false
@@ -262,7 +264,8 @@ function App() {
     try {
       const response = await axios.post(`${API_URL}/execute`, {
         code: activeTab.code,
-        language: activeTab.language
+        language: activeTab.language,
+        input: activeTab.input
       });
 
       if (response.data.success) {
@@ -400,6 +403,20 @@ function App() {
         </div>
 
         <div className="output-section">
+          {/* Input Section */}
+          <div className="input-section">
+            <div className="section-header">
+              <span>📥 Input (stdin)</span>
+            </div>
+            <textarea
+              className="input-textarea"
+              placeholder="Type input here (e.g., numbers, text)&#10;Each line will be sent to your program..."
+              value={activeTab.input}
+              onChange={(e) => updateTab(activeTab.id, { input: e.target.value })}
+            />
+          </div>
+
+          {/* Output Section */}
           <div className="section-header">
             <span>🖥️ Output</span>
             <div className="output-controls">

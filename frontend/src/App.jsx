@@ -393,11 +393,53 @@ function App() {
             theme={theme}
             options={{
               fontSize: 14,
-              minimap: { enabled: false },
+              fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+              fontLigatures: true,
+              minimap: { enabled: true, scale: 0.8 },
               scrollBeyondLastLine: false,
               automaticLayout: true,
               tabSize: 2,
-              wordWrap: 'on'
+              wordWrap: 'on',
+              // Syntax validation and error detection
+              quickSuggestions: true,
+              suggestOnTriggerCharacters: true,
+              parameterHints: { enabled: true },
+              formatOnPaste: true,
+              formatOnType: true,
+              // Error highlighting and markers
+              'semanticHighlighting.enabled': true,
+              glyphMargin: true,
+              folding: true,
+              lineNumbersMinChars: 3,
+              renderLineHighlight: 'all',
+              smoothScrolling: true,
+              cursorBlinking: 'smooth',
+              cursorSmoothCaretAnimation: 'on',
+              // Additional professional features
+              bracketPairColorization: { enabled: true },
+              guides: {
+                bracketPairs: true,
+                indentation: true
+              }
+            }}
+            onMount={(editor, monaco) => {
+              // Enable syntax validation for JavaScript
+              if (activeTab.language === 'javascript') {
+                monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                  noSemanticValidation: false,
+                  noSyntaxValidation: false
+                });
+                
+                monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+                  target: monaco.languages.typescript.ScriptTarget.ES2020,
+                  allowNonTsExtensions: true,
+                  checkJs: true,
+                  allowJs: true
+                });
+              }
+              
+              // For Python, C++, Java, C - Monaco has built-in syntax highlighting
+              // Errors will be caught at runtime when code executes
             }}
           />
         </div>

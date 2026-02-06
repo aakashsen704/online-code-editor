@@ -282,6 +282,9 @@ code, pre {
   z-index: 10;
   scrollbar-width: thin;
   scrollbar-color: var(--border-medium) transparent;
+  background: rgba(12, 26, 39, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .tab-bar::-webkit-scrollbar {

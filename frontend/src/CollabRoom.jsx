@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════════════════
-// COLLABORATIVE ROOM COMPONENT
-// Handles WebSocket connections, real-time sync, user presence, chat
+// COLLABORATIVE ROOM COMPONENT - IMPROVED MOBILE VERSION
+// Better button placement, upload/save functionality, professional styling
 // ═══════════════════════════════════════════════════════════════════════
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -12,9 +12,8 @@ import './CollabRoom.css';
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
 function CollabRoom() {
-  // ═══════════════════════════════════════════════════════════════════
-  // STATE MANAGEMENT
-  // ═══════════════════════════════════════════════════════════════════
+  // ... (Keep all the existing state and hooks - lines 1-230 from original)
+  // [Previous state management code stays the same]
   
   const [socket, setSocket] = useState(null);
   const [roomId, setRoomId] = useState('');
@@ -22,7 +21,6 @@ function CollabRoom() {
   const [isConnected, setIsConnected] = useState(false);
   const [inRoom, setInRoom] = useState(false);
   
-  // Code editor state
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
   const [input, setInput] = useState('');
@@ -31,30 +29,26 @@ function CollabRoom() {
   const [executionTime, setExecutionTime] = useState(null);
   const [hasError, setHasError] = useState(false);
   
-  // Collaboration state
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [remoteCursors, setRemoteCursors] = useState(new Map());
   
-  // Chat state
   const [messages, setMessages] = useState([]);
   const [chatMessage, setChatMessage] = useState('');
   const [showChat, setShowChat] = useState(true);
   
-  // Network metrics
   const [latency, setLatency] = useState(null);
   
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const lastCodeRef = useRef('');
   const chatEndRef = useRef(null);
-  
-  // ═══════════════════════════════════════════════════════════════════
-  // WEBSOCKET INITIALIZATION
-  // ═══════════════════════════════════════════════════════════════════
+  const fileInputRef = useRef(null);
+
+  // ... (Keep all useEffects and handlers from original - lines 50-320)
+  // WebSocket initialization, event listeners, etc.
   
   useEffect(() => {
-    // Initialize Socket.io connection
     const newSocket = io(API_URL, {
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -64,7 +58,6 @@ function CollabRoom() {
     
     setSocket(newSocket);
     
-    // Connection events
     newSocket.on('connect', () => {
       console.log('[WebSocket] Connected:', newSocket.id);
       setIsConnected(true);
@@ -79,20 +72,14 @@ function CollabRoom() {
       console.error('[WebSocket] Connection error:', error);
     });
     
-    // Cleanup on unmount
     return () => {
       newSocket.close();
     };
   }, []);
   
-  // ═══════════════════════════════════════════════════════════════════
-  // ROOM EVENT LISTENERS
-  // ═══════════════════════════════════════════════════════════════════
-  
   useEffect(() => {
     if (!socket) return;
     
-    // Room created
     socket.on('room-created', (data) => {
       console.log('[ROOM] Created:', data.roomId);
       setRoomId(data.roomId);
@@ -106,7 +93,6 @@ function CollabRoom() {
       addSystemMessage(`Room created! Share this ID: ${data.roomId}`);
     });
     
-    // Room joined
     socket.on('room-joined', (data) => {
       console.log('[ROOM] Joined:', data.roomId);
       setRoomId(data.roomId);
@@ -120,19 +106,16 @@ function CollabRoom() {
       addSystemMessage(`Joined room: ${data.roomId}`);
     });
     
-    // Room error
     socket.on('room-error', (data) => {
       alert(data.message);
     });
     
-    // User joined
     socket.on('user-joined', (data) => {
       console.log('[ROOM] User joined:', data.user.username);
       setUsers(data.users);
       addSystemMessage(`${data.user.username} joined the room`);
     });
     
-    // User left
     socket.on('user-left', (data) => {
       console.log('[ROOM] User left:', data.username);
       setUsers(data.users);
@@ -144,13 +127,11 @@ function CollabRoom() {
       addSystemMessage(`${data.username} left the room`);
     });
     
-    // Code update from others
     socket.on('code-update', (data) => {
       console.log('[SYNC] Code updated by:', data.username);
       setCode(data.code);
       lastCodeRef.current = data.code;
       
-      // Update cursor position
       if (data.cursorPosition) {
         setRemoteCursors(prev => new Map(prev).set(data.userId, {
           username: data.username,
@@ -159,7 +140,6 @@ function CollabRoom() {
       }
     });
     
-    // Cursor update
     socket.on('cursor-update', (data) => {
       setRemoteCursors(prev => new Map(prev).set(data.userId, {
         username: data.username,
@@ -168,7 +148,6 @@ function CollabRoom() {
       }));
     });
     
-    // Language update
     socket.on('language-update', (data) => {
       setLanguage(data.language);
       setCode(data.code);
@@ -176,23 +155,19 @@ function CollabRoom() {
       addSystemMessage(`Language changed to ${data.language}`);
     });
     
-    // Input update
     socket.on('input-update', (data) => {
       setInput(data.input);
     });
     
-    // Chat message
     socket.on('chat-message', (data) => {
       setMessages(prev => [...prev, data]);
     });
     
-    // Latency measurement
     socket.on('pong', (data) => {
       const rtt = Date.now() - data.clientTimestamp;
       setLatency(rtt);
     });
     
-    // Cleanup listeners
     return () => {
       socket.off('room-created');
       socket.off('room-joined');
@@ -208,17 +183,9 @@ function CollabRoom() {
     };
   }, [socket]);
   
-  // ═══════════════════════════════════════════════════════════════════
-  // AUTO-SCROLL CHAT
-  // ═══════════════════════════════════════════════════════════════════
-  
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-  
-  // ═══════════════════════════════════════════════════════════════════
-  // LATENCY PING (Every 5 seconds)
-  // ═══════════════════════════════════════════════════════════════════
   
   useEffect(() => {
     if (!socket || !inRoom) return;
@@ -229,10 +196,6 @@ function CollabRoom() {
     
     return () => clearInterval(interval);
   }, [socket, inRoom]);
-  
-  // ═══════════════════════════════════════════════════════════════════
-  // ROOM ACTIONS
-  // ═══════════════════════════════════════════════════════════════════
   
   const createRoom = () => {
     if (!username.trim()) {
@@ -259,15 +222,62 @@ function CollabRoom() {
     addSystemMessage('Room ID copied to clipboard!');
   };
   
-  // ═══════════════════════════════════════════════════════════════════
-  // CODE EDITOR HANDLERS
-  // ═══════════════════════════════════════════════════════════════════
+  // NEW: Upload file handler
+  const handleFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const fileContent = event.target.result;
+      setCode(fileContent);
+      lastCodeRef.current = fileContent;
+      
+      if (socket && inRoom) {
+        const position = editorRef.current?.getPosition();
+        const cursorPosition = position ? {
+          line: position.lineNumber,
+          column: position.column
+        } : null;
+        socket.emit('code-change', { roomId, code: fileContent, cursorPosition });
+      }
+      
+      addSystemMessage(`Uploaded file: ${file.name}`);
+    };
+    reader.readAsText(file);
+  };
+  
+  // NEW: Download file handler
+  const handleDownload = () => {
+    const extensions = {
+      javascript: '.js',
+      python: '.py',
+      java: '.java',
+      cpp: '.cpp',
+      c: '.c'
+    };
+    
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `code${extensions[language] || '.txt'}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    addSystemMessage('File downloaded');
+  };
   
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
     
-    // Listen for cursor position changes
     editor.onDidChangeCursorPosition((e) => {
       if (!socket || !inRoom) return;
       
@@ -285,7 +295,6 @@ function CollabRoom() {
     
     setCode(value);
     
-    // Only emit if code actually changed (not from remote update)
     if (value !== lastCodeRef.current) {
       lastCodeRef.current = value;
       
@@ -313,10 +322,6 @@ function CollabRoom() {
       socket.emit('input-change', { roomId, input: newInput });
     }
   };
-  
-  // ═══════════════════════════════════════════════════════════════════
-  // CODE EXECUTION
-  // ═══════════════════════════════════════════════════════════════════
   
   const runCode = async () => {
     setIsRunning(true);
@@ -347,10 +352,6 @@ function CollabRoom() {
     }
   };
   
-  // ═══════════════════════════════════════════════════════════════════
-  // CHAT FUNCTIONS
-  // ═══════════════════════════════════════════════════════════════════
-  
   const sendMessage = (e) => {
     e.preventDefault();
     if (!chatMessage.trim() || !socket || !inRoom) return;
@@ -369,7 +370,7 @@ function CollabRoom() {
   };
   
   // ═══════════════════════════════════════════════════════════════════
-  // RENDER: JOIN SCREEN
+  // RENDER: JOIN SCREEN (Keep same as original)
   // ═══════════════════════════════════════════════════════════════════
   
   if (!inRoom) {
@@ -420,38 +421,63 @@ function CollabRoom() {
   }
   
   // ═══════════════════════════════════════════════════════════════════
-  // RENDER: COLLABORATIVE EDITOR
+  // RENDER: COLLABORATIVE EDITOR - IMPROVED HEADER
   // ═══════════════════════════════════════════════════════════════════
   
   return (
     <div className="collab-room">
-      {/* Header */}
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".js,.py,.java,.cpp,.c,.txt"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
+      
+      {/* IMPROVED HEADER WITH BETTER MOBILE LAYOUT */}
       <header className="room-header">
-        <div className="header-left">
-          <h1>🚀 CodeCollab</h1>
-          <div className="room-info">
-            <span className="room-id" onClick={copyRoomId} title="Click to copy">
-              Room: {roomId}
-            </span>
-            {latency && <span className="latency">⚡ {latency}ms</span>}
+        <div className="header-top">
+          <div className="header-left">
+            <h1 className="app-title">🚀 CodeCollab</h1>
+            <div className="room-info">
+              <span className="room-id" onClick={copyRoomId} title="Click to copy">
+                Room: {roomId}
+              </span>
+              {latency && <span className="latency">⚡ {latency}ms</span>}
+            </div>
           </div>
+          
+          <button onClick={leaveRoom} className="leave-button-mobile">
+            Leave
+          </button>
         </div>
         
         <div className="header-controls">
-          <select value={language} onChange={handleLanguageChange} className="language-select">
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="java">Java</option>
-            <option value="cpp">C++</option>
-            <option value="c">C</option>
-          </select>
+          {/* Language Selector */}
+          <div className="control-group">
+            <select value={language} onChange={handleLanguageChange} className="language-select">
+              <option value="javascript">JavaScript</option>
+              <option value="python">Python</option>
+              <option value="java">Java</option>
+              <option value="cpp">C++</option>
+              <option value="c">C</option>
+            </select>
+          </div>
           
+          {/* File Actions */}
+          <div className="control-group file-actions">
+            <button onClick={handleFileUpload} className="icon-btn" title="Upload File">
+              📁 <span className="btn-text">Upload</span>
+            </button>
+            <button onClick={handleDownload} className="icon-btn" title="Download File">
+              💾 <span className="btn-text">Save</span>
+            </button>
+          </div>
+          
+          {/* Run Button */}
           <button onClick={runCode} disabled={isRunning} className="run-button">
-            {isRunning ? '⏳ Running...' : '▶ Run Code'}
-          </button>
-          
-          <button onClick={leaveRoom} className="leave-button">
-            Leave Room
+            {isRunning ? '⏳' : '▶'} <span className="btn-text">{isRunning ? 'Running...' : 'Run'}</span>
           </button>
         </div>
       </header>
